@@ -6,7 +6,13 @@
 parameters:
     env(MONGODB_URL): ''
     env(MONGODB_DB): ''
-    distance_multiplication: 360.00
+    src_to_rad_multiplication: 360.00
+    map_meter_width: 4000.00
+    laser:
+        meter_range: 30.00
+        aperture_angle: 270.00
+        relative_position: true
+    vertices_doubling: 2
 
 services:
     # default configuration for services in *this* file
@@ -38,4 +44,13 @@ services:
 
     App\Command\MeshLoaderCommand:
         arguments:
-            $distanceMultiplication: '%distance_multiplication%'
+            $distanceMultiplication: '%src_to_rad_multiplication%'
+
+    App\Resolver\LaserSensorResolver:
+        arguments:
+            $mapMeterWidth:      '%map_meter_width%'
+            $laserConfiguration: '%laser%'
+
+    App\Modifier\VerticesMultiplier:
+        arguments:
+            $multiplier: '%vertices_doubling%'

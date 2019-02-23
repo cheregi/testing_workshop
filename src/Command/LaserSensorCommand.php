@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Command;
 
+use App\Converter\TramConverter;
 use App\Resolver\LaserSensorResolver;
 use Doctrine\ODM\MongoDB\MongoDBException;
 use Symfony\Component\Console\Command\Command;
@@ -18,13 +19,20 @@ class LaserSensorCommand extends Command
     private $sensor;
 
     /**
+     * @var TramConverter
+     */
+    private $converter;
+
+    /**
      * LaserSensorCommand constructor.
      *
      * @param LaserSensorResolver $sensor
+     * @param TramConverter       $converter
      */
-    public function __construct(LaserSensorResolver $sensor)
+    public function __construct(LaserSensorResolver $sensor, TramConverter $converter)
     {
         $this->sensor = $sensor;
+        $this->converter = $converter;
         parent::__construct();
     }
 
@@ -67,23 +75,11 @@ class LaserSensorCommand extends Command
         );
         $end = microtime(true) - $start;
 
-        if ($output->isVerbose()) {
-            $output->writeln(sprintf('<info>%d points resolved</info>', count($points)));
+        if (!$output->isVerbose()) {
+            $output->writeln($this->converter->convert(TramConverter::DATA_TYPE_LASER_SENSOR, $points));
+            return;
         }
-
         foreach ($points as $point) {
-            if (!$output->isVerbose()) {
-                $output->write(
-                    sprintf(
-                        '%f%4$s%f%4$s%f%4$s',
-                        $point['x'],
-                        $point['y'],
-                        $point['z'],
-                        chr(0x1f)
-                    )
-                );
-                continue;
-            }
             $output->writeln(
                 sprintf(
                     'x:%f y:%f z:%f d:%f a:%f',
@@ -95,7 +91,8 @@ class LaserSensorCommand extends Command
                 )
             );
         }
-        $output->writeln($end);
+        $output->writeln(sprintf('<info>%d points resolved</info>', count($points)));
+        $output->writeln(sprintf('<info>Resolving time : %fs</info>', $end));
     }
 
 }

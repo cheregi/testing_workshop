@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types=1);
 namespace App\Document\Repository;
 
 use Doctrine\ODM\MongoDB\DocumentRepository;

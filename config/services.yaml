@@ -6,7 +6,7 @@
 parameters:
     env(MONGODB_URL): ''
     env(MONGODB_DB): ''
-    distance_multiplication: 360
+    distance_multiplication: 360.00
 
 services:
     # default configuration for services in *this* file

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Document;
 
@@ -25,7 +26,7 @@ class Coordinates
      * @param int $positionX
      * @param int $positionY
      */
-    public function __construct(int $positionX = 0, int $positionY = 0)
+    public function __construct(float $positionX = 0, float $positionY = 0)
     {
         $this->positionX = $positionX;
         $this->positionY = $positionY;

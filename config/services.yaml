@@ -6,6 +6,7 @@
 parameters:
     env(MONGODB_URL): ''
     env(MONGODB_DB): ''
+    distance_multiplication: 360
 
 services:
     # default configuration for services in *this* file
@@ -34,3 +35,7 @@ services:
     App\Document\Repository\MapPointRepository:
         factory: 'Doctrine\ODM\MongoDB\DocumentManager:getRepository'
         arguments: ['App\Document\MapPoint']
+
+    App\Command\MeshLoaderCommand:
+        arguments:
+            $distanceMultiplication: '%distance_multiplication%'

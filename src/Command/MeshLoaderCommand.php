@@ -44,6 +44,11 @@ class MeshLoaderCommand extends Command
     private $manager;
 
     /**
+     * @var int
+     */
+    private $distanceMultiplication;
+
+    /**
      * MeshLoaderCommand constructor.
      *
      * @param Filesystem         $fileSystem
@@ -55,12 +60,14 @@ class MeshLoaderCommand extends Command
         Filesystem $fileSystem,
         MeshParser $parser,
         MapPointRepository $repository,
-        DocumentManager $manager
+        DocumentManager $manager,
+        int $distanceMultiplication
     ) {
         $this->fileSystem = $fileSystem;
         $this->meshParser = $parser;
         $this->repository = $repository;
         $this->manager = $manager;
+        $this->distanceMultiplication = $distanceMultiplication;
 
         parent::__construct();
     }
@@ -117,6 +124,9 @@ class MeshLoaderCommand extends Command
             $loadedPoints = 0;
         }
         foreach ($points as [$x, $y, $z]) {
+            $x = $this->distanceMultiplication * floatval($x);
+            $y = $this->distanceMultiplication * floatval($y);
+            $z = $this->distanceMultiplication * floatval($z);
             if (isset($xStat) && isset($yStat) && isset($zStat) && isset($loadedPoints)) {
                 if ($x < $xStat['min'] || $xStat['min'] === null) {
                     $xStat['min'] = $x;
@@ -149,10 +159,10 @@ class MeshLoaderCommand extends Command
                 $mapPoint = new MapPoint();
                 $mapPoint->setCoordinates(
                     new Coordinates(
-                        floatval($x),
-                        floatval($y)
+                        $x,
+                        $y
                     )
-                )->setElevation(floatval($z));
+                )->setElevation($z);
 
                 $this->manager->persist($mapPoint);
                 $this->manager->flush();

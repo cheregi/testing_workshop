@@ -51,5 +51,35 @@ can be obtained by `n + (m²)` where `n` is the count of initial vertices and `m
 The `laser.relative_position` define if the resulting points coordinates have to be relatives to the given parameters
 or have to be absolute on the map referential.
 
-The command return the machine representation. To get human readable results, use the `-v` option. 
+The command return the machine representation. To get human readable results, use the `-v` option.
 
+# Protocol specification
+
+### Laser sensor downstream
+
+For the laser sensor, the data sent are : 
+ * ASCII character SOH (hex x01) as data type
+ * any number of _point_coordinates_ separated by the ASCII character GS (hex x1D)
+ * ASCII character ETX (hex x03) as end of text
+ 
+The _point_coordinates_ are :
+ * ordinate position
+ * ASCII character US as unit separator
+ * absciss position
+ * ASCII character US as unit delimiter
+ * elevation position
+
+```txt
+This is the textual representation with two points (real output)
+19.141-21.87615.613.282-25.78213.478
+```
+
+```hex
+This is the hexadecimal representation with two points
+  |  vertex1  X     |  |  vertex1 Y         |  | vertex1 Z |  |  vertex2 X      |  |  vertex2 Y         |  | vertex2 Z       |
+01 31 39 2E 31 34 31 1F 2D 32 31 2E 38 37 36 1F 31 35 2E 36 1D 31 33 2E 32 38 32 1F 2D 32 35 2E 37 38 32 1F 31 33 2E 34 37 38 03
+||                   ||                      ||             ||                   ||                      ||                   ||
+01 (SOH)             ||                      ||             ||                   ||                      ||                   03 (ETX)
+                     1F (US)                 1F             ||                   1F                      1F
+                                                            1D (GS)
+```

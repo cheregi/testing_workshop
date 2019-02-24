@@ -13,6 +13,8 @@ parameters:
         aperture_angle: 270.00
         relative_position: true
     vertices_doubling: 2
+    geo_near_sample_radius: 1
+    near_retry: 5
 
 services:
     # default configuration for services in *this* file
@@ -54,3 +56,13 @@ services:
     App\Modifier\VerticesMultiplier:
         arguments:
             $multiplier: '%vertices_doubling%'
+
+    App\Resolver\FaceResolver:
+        arguments:
+            $sampleRadius: '%geo_near_sample_radius%'
+            $mapMeterWidth: '%map_meter_width%'
+            $retry: '%near_retry%'
+
+    App\Resolver\AltimeterResolver:
+        arguments:
+            $mapMeterWidth: '%map_meter_width%'

@@ -53,6 +53,30 @@ or have to be absolute on the map referential.
 
 The command return the machine representation. To get human readable results, use the `-v` option.
 
+## Nearest point resolution
+
+The nearest point resolution try to find the nearest points around the vehicle position. The `geo_near_sample_radius`
+application parameter define the radial radius of the circular geonear request. If the points cannot match "top right"
+and "top left" and "bottom left" and "bottom right", then a retry strategy is used to resolve more points.
+
+The retry strategy will double the `geo_near_sample_radius` recursively to reach the `near_retry` parameter count.
+
+```bash
+./console app:points:nearest posx posy
+```
+
+## Test altimeter sensor
+
+The altimeter sensor is based on the result of the _nearest point_ resolution. It'll use the resolved exact point if
+exist or process the average elevation calculation of the nearest points intersections.
+
+```bash
+./console app:sensor:alt posx posy
+```
+
+The command is designed to return the machine-machine representation. To get a human readable representation, use the
+`-v` option.
+
 # Protocol specification
 
 ### Laser sensor downstream
@@ -82,4 +106,24 @@ This is the hexadecimal representation with two points
 01 (SOH)             ||                      ||             ||                   ||                      ||                   03 (ETX)
                      1F (US)                 1F             ||                   1F                      1F
                                                             1D (GS)
+```
+
+### Altimeter sensor downstream
+
+For the altimeter sensor, the data sent are : 
+ * ASCII character SOH (hex x01) as data type
+ * altimeter value
+ * ASCII character ETX (hex x03) as end of text
+
+```txt
+This is the textual representation (real output, separation character escaped by gitlab)
+418.472
+```
+
+```hex
+This is the hexadecimal representation
+  |  altimeter value   |
+02 34 31 38 2E 34 37 32 03
+||                      ||
+01 (SOH)                03 (ETX)
 ```

@@ -7,11 +7,20 @@ class TramConverter
 {
     const DATA_TYPE_LASER_SENSOR = 1;
 
+    const DATA_TYPE_ALTIMETER = 2;
+
     public function convert($dataType, $data)
     {
         if ($dataType === static::DATA_TYPE_LASER_SENSOR) {
             return $this->convertLaserData($data);
+        } else if ($dataType === static::DATA_TYPE_ALTIMETER) {
+            return$this->convertAltimeterData($data);
         }
+    }
+
+    private function convertAltimeterData($data)
+    {
+        return sprintf('%s%s%s', chr(static::DATA_TYPE_ALTIMETER), $data, chr(0x03));
     }
 
     private function convertLaserData($data)

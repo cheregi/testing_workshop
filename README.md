@@ -70,7 +70,7 @@ The _point_coordinates_ are :
  * elevation position
 
 ```txt
-This is the textual representation with two points (real output)
+This is the textual representation with two points (real output, separation character escaped by gitlab)
 19.141-21.87615.613.282-25.78213.478
 ```
 

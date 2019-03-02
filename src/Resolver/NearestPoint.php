@@ -55,6 +55,47 @@ class NearestPoint
         $this->exactPoint = $exactPoint;
     }
 
+    public function rotate(float $angle)
+    {
+        $radialAngle = $angle * (pi() / 180);
+
+        $points = [
+            $this->topRightPoint,
+            $this->topLeftPoint,
+            $this->bottomRightPoint,
+            $this->bottomLeftPoint
+        ];
+        foreach ($points as $point) {
+            if (!$point) {
+                continue;
+            }
+            $positionX = $point->getCoordinates()->getPositionX();
+            $positionY = $point->getCoordinates()->getPositionY();
+            $radius = sqrt(
+                pow($positionX, 2) +
+                pow($positionY, 2)
+            );
+
+            $xRad = $radialAngle * ($positionY / abs($positionY));
+            $yRad = $radialAngle * ($positionX / abs($positionX));
+
+            $newX = cos(acos($positionX / $radius) + $xRad) * $radius;
+            $newY = sin(asin($positionY / $radius) + $yRad) * $radius;
+            $point->getCoordinates()->setPositionX($newX);
+            $point->getCoordinates()->setPositionY($newY);
+
+            if ($newX > 0 && $newY > 0) {
+                $this->topRightPoint = $point;
+            } else if ($newX < 0 && $newY > 0) {
+                $this->topLeftPoint = $point;
+            } else if ($newX > 0 && $newY < 0) {
+                $this->bottomRightPoint = $point;
+            } else if ($newX < 0 && $newY < 0) {
+                $this->bottomLeftPoint = $point;
+            }
+        }
+    }
+
     /**
      * @return MapPoint|null
      */

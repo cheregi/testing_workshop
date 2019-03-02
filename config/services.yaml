@@ -62,3 +62,7 @@ services:
             $sampleRadius: '%geo_near_sample_radius%'
             $mapMeterWidth: '%map_meter_width%'
             $retry: '%near_retry%'
+    DeepCopy\DeepCopy:
+        class: DeepCopy\DeepCopy
+        arguments:
+            - true

@@ -115,9 +115,15 @@ class FaceResolver
         );
 
         $centeredPoints = array_map(function(MapPoint $point) use ($centerX, $centerY) {
+            $point->getCoordinates()->setPositionX(
+                $point->getCoordinates()->getPositionX() - $centerX
+            );
+            $point->getCoordinates()->setPositionY(
+                $point->getCoordinates()->getPositionY() - $centerY
+            );
             $coordinate = [
-                'x' => $point->getCoordinates()->getPositionX() - $centerX,
-                'y' => $point->getCoordinates()->getPositionY() - $centerY,
+                'x' => $point->getCoordinates()->getPositionX(),
+                'y' => $point->getCoordinates()->getPositionY(),
                 'origin' => $point
             ];
 

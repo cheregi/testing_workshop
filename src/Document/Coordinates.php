@@ -23,8 +23,8 @@ class Coordinates
     /**
      * Coordinates constructor.
      *
-     * @param int $positionX
-     * @param int $positionY
+     * @param float $positionX
+     * @param float $positionY
      */
     public function __construct(float $positionX = 0, float $positionY = 0)
     {

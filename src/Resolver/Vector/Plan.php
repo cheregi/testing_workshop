@@ -56,6 +56,9 @@ class Plan
             $dx = $vector->getTransX();
             $dy = $vector->getTransY();
             $dz = $vector->getTransZ();
+            if ((($nx * $dx) + ($ny * $dy) + ($nz * $dz)) == 0) {
+                return 0;
+            }
 
             return ((-1 * $d) - ($nx * $ax) - ($ny * $ay) - ($nz * $az)) / (($nx * $dx) + ($ny * $dy) + ($nz * $dz));
         };

@@ -62,7 +62,3 @@ services:
             $sampleRadius: '%geo_near_sample_radius%'
             $mapMeterWidth: '%map_meter_width%'
             $retry: '%near_retry%'
-
-    App\Resolver\AltimeterResolver:
-        arguments:
-            $mapMeterWidth: '%map_meter_width%'

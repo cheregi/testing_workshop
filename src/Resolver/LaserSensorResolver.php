@@ -119,7 +119,7 @@ class LaserSensorResolver
                 $coordinates = [
                     'x' => $point->getCoordinates()->getPositionX() * $meterPerRad,
                     'y' => $point->getCoordinates()->getPositionY() * $meterPerRad,
-                    'z' => $point->getElevation() * $meterPerRad
+                    'z' => $point->getElevation()
                 ];
 
                 $dist = [

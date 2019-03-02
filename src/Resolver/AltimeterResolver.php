@@ -7,23 +7,10 @@ use App\Document\MapPoint;
 
 class AltimeterResolver
 {
-    private $mapMeterWidth;
-
-    /**
-     * AltimeterResolver constructor.
-     *
-     * @param $mapMeterWidth
-     */
-    public function __construct(float $mapMeterWidth)
-    {
-        $this->mapMeterWidth = $mapMeterWidth;
-    }
-
     public function getAltitude(NearestPoint $nearestPoint)
     {
-        $meterPerRad = $this->mapMeterWidth / 360;
         if ($nearestPoint->getExactPoint()) {
-            return $nearestPoint->getExactPoint()->getElevation() * $meterPerRad;
+            return $nearestPoint->getExactPoint()->getElevation();
         }
 
         $elevations = [
@@ -36,7 +23,7 @@ class AltimeterResolver
         ];
 
         $elevations = array_filter($elevations);
-        return (array_sum($elevations) / count($elevations)) * $meterPerRad;
+        return (array_sum($elevations) / count($elevations));
     }
 
     private function getAverageElevation(?MapPoint $firstPoint, ?MapPoint $secondPoint)

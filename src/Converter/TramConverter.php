@@ -3,18 +3,24 @@ declare(strict_types=1);
 
 namespace App\Converter;
 
+use App\Resolver\Gyroscope\GyroscopicInfo;
+
 class TramConverter
 {
     const DATA_TYPE_LASER_SENSOR = 1;
 
     const DATA_TYPE_ALTIMETER = 2;
 
+    const DATA_TYPE_GYROSCOPE = 3;
+
     public function convert($dataType, $data)
     {
         if ($dataType === static::DATA_TYPE_LASER_SENSOR) {
             return $this->convertLaserData($data);
         } else if ($dataType === static::DATA_TYPE_ALTIMETER) {
-            return$this->convertAltimeterData($data);
+            return $this->convertAltimeterData($data);
+        } else if ($dataType === static::DATA_TYPE_GYROSCOPE) {
+            return $this->convertGyroscopicInfo($data);
         }
     }
 
@@ -30,5 +36,22 @@ class TramConverter
             $dataInfo[] = implode(chr(0x1f), [$x, $y, $z]);
         }
         return sprintf('%s%s%s', chr(static::DATA_TYPE_LASER_SENSOR), implode(chr(0x1d), $dataInfo), chr(0x03));
+    }
+
+    private function convertGyroscopicInfo(GyroscopicInfo $dataInfo)
+    {
+        return sprintf(
+            '%s%s%s',
+            chr(static::DATA_TYPE_GYROSCOPE),
+            implode(
+                chr(0x1d),
+                [
+                    $dataInfo->getXyAngle(),
+                    $dataInfo->getXzAngle(),
+                    $dataInfo->getYzAngle()
+                ]
+            ),
+            chr(0x03)
+        );
     }
 }

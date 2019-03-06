@@ -56,7 +56,9 @@ class Consumer
 
     public function close()
     {
-        $this->pool->shutdown();
+        if ($this->pool) {
+            $this->pool->shutdown();
+        }
     }
 
 }

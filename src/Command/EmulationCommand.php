@@ -5,6 +5,7 @@ namespace App\Command;
 
 use App\Amqp\Consumer;
 use App\Amqp\Producer;
+use App\Amqp\Thread\Task;
 use App\Converter\TramConverter;
 use App\Resolver\AltimeterResolver;
 use App\Resolver\FaceResolver;
@@ -230,7 +231,11 @@ class EmulationCommand extends Command
         }
         $lastSecond = 0;
 
-        $task = $this->amqpConsumer->start($continue);
+        if (!$benchmark && $maxTick == 0 && $maxTime == 0) {
+            $task = $this->amqpConsumer->start($continue);
+        } else {
+            $task = new Task([], $continue);
+        }
         while ($task->getContinue()) {
             $tickStartedTime = microtime(true) * 1000;
             $this->logger->debug('Tick started');

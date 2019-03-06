@@ -15,6 +15,13 @@ parameters:
     vertices_doubling: 2
     geo_near_sample_radius: 1
     near_retry: 5
+    wheel:
+        diameter: 130.0
+        max_rpm: 26.0
+        rotation_rpm: 13
+    rover_length: 650.0
+    tick_time: 0.005
+
 
 services:
     # default configuration for services in *this* file
@@ -39,6 +46,15 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    App\Resolver\MovementResolver:
+        arguments:
+            $wheelConfiguration: '%wheel%'
+            $bodyLength: '%rover_length%'
+
+    App\Command\MovementCommand:
+        arguments:
+            $tickTime: '%tick_time%'
 
     App\Document\Repository\MapPointRepository:
         factory: 'Doctrine\ODM\MongoDB\DocumentManager:getRepository'

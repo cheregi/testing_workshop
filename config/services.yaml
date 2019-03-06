@@ -21,6 +21,11 @@ parameters:
         rotation_rpm: 13
     rover_length: 650.0
     tick_time: 0.005
+    tick_per_second: 150
+    data_tick_config:
+        tick_per_altimeter: 100
+        tick_per_gyroscope: 100
+        tick_per_laser:     1000
 
 
 services:
@@ -46,6 +51,12 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    App\Command\EmulationCommand:
+        arguments:
+            $tickPerSecond: '%tick_per_second%'
+            $tickTime: '%tick_time%'
+            $dataTickConfig: '%data_tick_config%'
 
     App\Resolver\MovementResolver:
         arguments:

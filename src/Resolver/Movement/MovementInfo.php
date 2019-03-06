@@ -92,9 +92,12 @@ class MovementInfo
 
     /**
      * @param float $angle
+     *
+     * @return MovementInfo
      */
-    public function setAngle(float $angle): void
+    public function setAngle(float $angle): MovementInfo
     {
         $this->angle = $angle;
+        return $this;
     }
 }

@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace App\Command;
 
+use App\Amqp\Consumer;
+use App\Amqp\Producer;
+use App\Converter\TramConverter;
 use App\Resolver\AltimeterResolver;
 use App\Resolver\FaceResolver;
 use App\Resolver\GyroscopicResolver;
@@ -11,6 +14,7 @@ use App\Resolver\MovementResolver;
 use App\Resolver\RoverInformation\DataContainer;
 use App\Resolver\RoverInformation\RoverInformation;
 use Doctrine\ODM\MongoDB\MongoDBException;
+use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -87,6 +91,21 @@ class EmulationCommand extends Command
     private $dataTickConfig;
 
     /**
+     * @var TramConverter
+     */
+    private $converter;
+
+    /**
+     * @var Producer
+     */
+    private $amqpProcuder;
+
+    /**
+     * @var Consumer
+     */
+    private $amqpConsumer;
+
+    /**
      * @param int                 $tickPerSecond
      * @param float               $tickTime
      * @param array               $dataTickConfig
@@ -96,6 +115,9 @@ class EmulationCommand extends Command
      * @param MovementResolver    $movementResolver
      * @param GyroscopicResolver  $gyroscopicResolver
      * @param LaserSensorResolver $laserResolver
+     * @param TramConverter       $converter
+     * @param Producer            $producer
+     * @param Consumer            $consumer
      */
     public function __construct(
         int $tickPerSecond,
@@ -106,11 +128,20 @@ class EmulationCommand extends Command
         AltimeterResolver $altimeterResolver,
         MovementResolver $movementResolver,
         GyroscopicResolver $gyroscopicResolver,
-        LaserSensorResolver $laserResolver
+        LaserSensorResolver $laserResolver,
+        TramConverter $converter,
+        Producer $producer,
+        Consumer $consumer
     ) {
         $this->timePerTick = 1000 / $tickPerSecond;
         $this->tickTime = $tickTime;
-        $this->logger = $logger;
+
+        if ($logger instanceof Logger) {
+            $this->logger = $logger->withName('EMU');
+        } else {
+            $this->logger = $logger;
+        }
+
         $this->faceResolver = $faceResolver;
         $this->altimeterResolver = $altimeterResolver;
         $this->movementResolver = $movementResolver;
@@ -118,6 +149,9 @@ class EmulationCommand extends Command
         $this->laserResolver = $laserResolver;
         $this->dataContainer = new DataContainer();
         $this->dataTickConfig = $dataTickConfig;
+        $this->converter = $converter;
+        $this->amqpProcuder = $producer;
+        $this->amqpConsumer = $consumer;
 
         $this->roverInformation = new RoverInformation();
 
@@ -195,7 +229,9 @@ class EmulationCommand extends Command
             $loaders[] = $tmpLoader;
         }
         $lastSecond = 0;
-        while ($continue) {
+
+        $task = $this->amqpConsumer->start($continue);
+        while ($task->getContinue()) {
             $tickStartedTime = microtime(true) * 1000;
             $this->logger->debug('Tick started');
 
@@ -207,10 +243,10 @@ class EmulationCommand extends Command
             $curTime = microtime(true);
 
             if ($maxTick > 0 && $tickCounter > $maxTick) {
-                $continue = false;
+                $task->setContinue(false);
             }
             if ($maxTime > 0 && ($curTime - $this->start) > $maxTime) {
-                $continue = false;
+                $task->setContinue(false);
             }
 
             $elapsed = ($curTime * 1000) - $tickStartedTime;
@@ -226,10 +262,10 @@ class EmulationCommand extends Command
                         $progress->clear();
                     }
                     $output->writeln(sprintf('Max tps : %f', (1000 / $timePerTick)));
-                    $continue = false;
+                    $task->setContinue(false);
                     $benchmark = false;
                 } else {
-                    $this->logger->warning('Overclocked', ['delta (ms)' => $microSecondRemain / 1000, 'tps' => (1000 / $timePerTick), 'tpt' => $timePerTick]);
+                    $this->logger->notice('Overclocked', ['delta (ms)' => $microSecondRemain / 1000, 'tps' => (1000 / $timePerTick), 'tpt' => $timePerTick]);
                 }
             }
             if ($benchmark) {
@@ -241,20 +277,27 @@ class EmulationCommand extends Command
                 if (++$currentLoader > (count($loaders) - 1)) {
                     $currentLoader = 0;
                 }
-                $output->write(str_repeat(chr(0x08), strlen($loaders[$currentLoader])) . $loaders[$currentLoader]);
+                $output->write(str_repeat(chr(0x08), strlen($loaders[$currentLoader]) + 20) . $loaders[$currentLoader] . sprintf(' %s MB', number_format(memory_get_usage(true)/1048576,2)));
                 $lastSecond = intval($curTime * 10);
+                gc_collect_cycles();
+
+                if($this->logger instanceof Logger) {
+                    $this->logger->reset();
+                }
             }
         };
         $this->logger->debug('Executed time', ['time' => microtime(true) - $this->start]);
         if (!$benchmark) {
-            $output->write(str_repeat(chr(0x08), strlen($loaders[0])));
+            $output->write(str_repeat(chr(0x08), strlen($loaders[0]) + 20));
         }
         if (isset($progress)) {
             $progress->clear();
         }
         $output->writeln(sprintf('Executed ticks : %f%s', $tickCounter, str_repeat(' ', strlen($loaders[0]))));
         $output->writeln(sprintf('Execution time : %fs', microtime(true) - $this->start));
+        $output->writeln(sprintf('Memory usage : %f MB', memory_get_usage(true)/1048576,2));
 
+        $this->amqpConsumer->close();
         return 0;
     }
 
@@ -309,6 +352,7 @@ class EmulationCommand extends Command
      */
     private function executeDataUpdate(int $tick = 0)
     {
+        $position = false;
         $altimeter = false;
         $gyroscope = false;
         $laser = false;
@@ -321,17 +365,39 @@ class EmulationCommand extends Command
         if ($tick == 0 || $tick % $this->dataTickConfig['tick_per_laser'] == 0) {
             $laser = true;
         }
+        if ($tick == 0 || $tick % $this->dataTickConfig['tick_per_position'] == 0) {
+            $position = true;
+        }
 
-        if ($altimeter) {
+        if ($position) {
+            $this->amqpProcuder->addMessage(
+                json_encode(
+                    [
+                        'type' => TramConverter::DATA_TYPE_POSITION,
+                        'data' => $this->converter->convert(
+                            TramConverter::DATA_TYPE_POSITION,
+                            $this->roverInformation
+                        )
+                    ]
+                )
+            );
+        }
+
+        if ($altimeter || $gyroscope) {
+            $this->logger->debug('Nearest point resolution');
+            $start = microtime(true);
             $this->dataContainer->setNearestPoint(
                 $this->faceResolver->getFaceNear(
                     $this->roverInformation->getPositionX(),
                     $this->roverInformation->getPositionY()
                 )
             );
+            $this->logger->debug('Nearest point resolved', ['time' => microtime(true) - $start]);
         }
 
         if ($altimeter) {
+            $this->logger->debug('Altimeter resolution');
+            $start = microtime(true);
             $this->dataContainer->setElevation(
                 $this->altimeterResolver->getAltitude(
                     $this->dataContainer->getNearestPoint()
@@ -340,18 +406,46 @@ class EmulationCommand extends Command
             $this->roverInformation->setElevation(
                 $this->dataContainer->getElevation()
             );
+            $this->logger->debug('Altimeter resolved', ['time' => microtime(true) - $start]);
+            $this->amqpProcuder->addMessage(
+                json_encode(
+                    [
+                        'type' => TramConverter::DATA_TYPE_ALTIMETER,
+                        'data' => $this->converter->convert(
+                            TramConverter::DATA_TYPE_ALTIMETER,
+                            $this->dataContainer->getElevation()
+                        )
+                    ]
+                )
+            );
         }
 
         if ($gyroscope) {
+            $this->logger->debug('Gyroscopic resolution');
+            $start = microtime(true);
             $this->dataContainer->setGyroscope(
                 $this->gyroscopicResolver->getGyroscopicInfo(
                     $this->dataContainer->getNearestPoint(),
                     $this->roverInformation->getAngle()
                 )
             );
+            $this->logger->debug('Gyroscopic resolved', ['time' => microtime(true) - $start]);
+            $this->amqpProcuder->addMessage(
+                json_encode(
+                    [
+                        'type' => TramConverter::DATA_TYPE_GYROSCOPE,
+                        'data' => $this->converter->convert(
+                            TramConverter::DATA_TYPE_GYROSCOPE,
+                            $this->dataContainer->getGyroscope()
+                        )
+                    ]
+                )
+            );
         }
 
         if ($laser) {
+            $this->logger->debug('Laser resolution');
+            $start = microtime(true);
             $this->dataContainer->setLaserInformation(
                 $this->laserResolver->resolveDetectedPoints(
                     $this->roverInformation->getPositionX(),
@@ -360,7 +454,21 @@ class EmulationCommand extends Command
                     $this->roverInformation->getElevation()
                 )
             );
+            $this->logger->debug('Laser resolved', ['time' => microtime(true) - $start]);
+            $this->amqpProcuder->addMessage(
+                json_encode(
+                    [
+                        'type' => TramConverter::DATA_TYPE_LASER_SENSOR,
+                        'data' => $this->converter->convert(
+                            TramConverter::DATA_TYPE_LASER_SENSOR,
+                            $this->dataContainer->getLaserInformation()
+                        )
+                    ]
+                )
+            );
         }
+
+        $this->amqpProcuder->flush();
     }
 
     /**

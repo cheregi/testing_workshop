@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Converter;
 
 use App\Resolver\Gyroscope\GyroscopicInfo;
+use App\Resolver\RoverInformation\RoverInformation;
 
 class TramConverter
 {
@@ -13,6 +14,8 @@ class TramConverter
 
     const DATA_TYPE_GYROSCOPE = 3;
 
+    const DATA_TYPE_POSITION = 4;
+
     public function convert($dataType, $data)
     {
         if ($dataType === static::DATA_TYPE_LASER_SENSOR) {
@@ -21,7 +24,26 @@ class TramConverter
             return $this->convertAltimeterData($data);
         } else if ($dataType === static::DATA_TYPE_GYROSCOPE) {
             return $this->convertGyroscopicInfo($data);
+        } else if ($dataType === static::DATA_TYPE_POSITION) {
+            return $this->convertPositionData($data);
         }
+    }
+
+    private function convertPositionData(RoverInformation $information)
+    {
+        return sprintf(
+            '%s%s%s',
+            chr(static::DATA_TYPE_POSITION),
+            implode(
+                chr(0x1d),
+                [
+                    $information->getPositionX(),
+                    $information->getPositionY(),
+                    $information->getWheelAngle()
+                ]
+            ),
+            chr(0x03)
+        );
     }
 
     private function convertAltimeterData($data)

@@ -23,10 +23,17 @@ parameters:
     tick_time: 0.005
     tick_per_second: 150
     data_tick_config:
-        tick_per_altimeter: 100
-        tick_per_gyroscope: 100
-        tick_per_laser:     1000
-
+        tick_per_altimeter: 1
+        tick_per_gyroscope: 1
+        tick_per_laser:     1
+        tick_per_position:  1
+    rabbitmq:
+        host: exchange
+        port: 5672
+        user: app
+        password: gocex
+        queue: downstream
+        back-queue: upstream
 
 services:
     # default configuration for services in *this* file
@@ -41,7 +48,7 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/*'
-        exclude: '../src/{DependencyInjection,Document,Migrations,Tests,Kernel.php}'
+        exclude: '../src/{DependencyInjection,Document,Migrations,Tests,Kernel.php, Amqp/Thread}'
 
     # controllers are imported separately to make sure services can be injected
     # as action arguments even if you don't extend any base controller class
@@ -51,6 +58,22 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    App\Command\DataReceiverCommand:
+        arguments:
+            $config: '%rabbitmq%'
+
+    App\Command\StopCommand:
+        arguments:
+            $config: '%rabbitmq%'
+
+    App\Amqp\Producer:
+        arguments:
+            $config: '%rabbitmq%'
+
+    App\Amqp\Consumer:
+        arguments:
+            $config: '%rabbitmq%'
 
     App\Command\EmulationCommand:
         arguments:

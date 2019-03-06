@@ -28,10 +28,13 @@ class MapPointRepository extends DocumentRepository
     public function findCircularPoints(float $centerX, float $centerY, float $radius)
     {
         $queryBuilder = $this->createQueryBuilder();
-        return $queryBuilder->field('coordinates')
+        $results = $queryBuilder->field('coordinates')
             ->geoWithinCenter($centerX, $centerY, $radius)
             ->getQuery()
             ->execute();
+
+        $this->getDocumentManager()->clear();
+        return $results;
     }
 
     /**
@@ -46,9 +49,12 @@ class MapPointRepository extends DocumentRepository
     public function findBoxedPoints(float $fromX, float $fromY, float $toX, float $toY)
     {
         $queryBuilder = $this->createQueryBuilder();
-        return $queryBuilder->field('coordinates')
+        $results = $queryBuilder->field('coordinates')
             ->geoWithinBox($fromX, $fromY, $toX, $toY)
             ->getQuery()
             ->execute();
+
+        $this->getDocumentManager()->clear();
+        return $results;
     }
 }

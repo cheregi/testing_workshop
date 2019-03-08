@@ -12,22 +12,22 @@ class Producer
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    protected $logger;
 
     /**
      * @var AMQPStreamConnection
      */
-    private $connection;
+    protected $connection;
 
     /**
      * @var \PhpAmqpLib\Channel\AMQPChannel
      */
-    private $channel;
+    protected $channel;
 
     /**
      * @var string
      */
-    private $queueName;
+    protected $queueName;
 
     public function __construct(array $config, LoggerInterface $logger)
     {
@@ -39,7 +39,7 @@ class Producer
         );
 
         $this->channel = $this->connection->channel();
-        $this->channel->queue_declare($config['queue'], false, false, false, false, true);
+        $this->channel->queue_declare($config['queue'], false, true, false, false, false);
         $this->queueName = $config['queue'];
         $this->logger = $logger;
     }
@@ -47,8 +47,7 @@ class Producer
     public function addMessage(string $message)
     {
         try {
-            $this->logger->debug('Sending information to queue');
-            $start = microtime(true);
+            $this->logger->debug('Adding information to queue');
 
             $amqpMessage = new AMQPMessage($message);
             $this->channel->batch_basic_publish(
@@ -56,7 +55,7 @@ class Producer
                 '',
                 $this->queueName
             );
-            $this->logger->debug('Information sent', ['time' => microtime(true) - $start]);
+            $this->logger->debug('Done');
         } catch (AMQPRuntimeException $exception) {
             $this->logger->error(
                 'Sending message failed',
@@ -67,7 +66,13 @@ class Producer
 
     public function flush()
     {
-        $this->channel->publish_batch();
+        $start = microtime(true);
+        $this->logger->debug('Sending information to queue');
+        if ($this->channel->publish_batch() === false) {
+            $this->logger->debug('Empty set');
+            return;
+        }
+        $this->logger->debug('Information sent', ['time' => microtime(true) - $start]);
     }
 
     /**

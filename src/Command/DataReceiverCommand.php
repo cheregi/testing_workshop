@@ -50,7 +50,7 @@ class DataReceiverCommand extends Command
     {
         $connection = new AMQPStreamConnection($this->config['host'], $this->config['port'], $this->config['user'], $this->config['password']);
         $channel = $connection->channel();
-        $channel->queue_declare($this->config['queue'], false, false, false, false);
+        $channel->queue_declare($this->config['queue'], false, true, false, false, false);
 
         $channel->basic_consume($this->config['queue'], '', false, true, false, false, function(AMQPMessage $message) use ($output) {
             $output->writeln($message->getBody());

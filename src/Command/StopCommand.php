@@ -51,7 +51,7 @@ class StopCommand extends Command
     {
         $connection = new AMQPStreamConnection($this->config['host'], $this->config['port'], $this->config['user'], $this->config['password']);
         $channel = $connection->channel();
-        $channel->queue_declare($this->config['back-queue'], false, false, false, false);
+        $channel->queue_declare($this->config['back-queue'], false, true, false, false, false);
 
         $channel->basic_publish(
             new AMQPMessage(json_encode(['data' => ['type' => Task::DATA_TYPE_STOP]])),

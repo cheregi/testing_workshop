@@ -39,7 +39,7 @@ class Task extends \Threaded
     {
         $connection = new Connection($this->config['host'], $this->config['port'], $this->config['user'], $this->config['password']);
         $channel = $connection->channel();
-        $channel->queue_declare($this->config['back-queue'], false, false, false, false);
+        $channel->queue_declare($this->config['back-queue'], false, true, false, false, false);
 
         $channel->basic_consume($this->config['back-queue'], '', false, true, false, false, function(AMQPMessage $message) {
             $data = json_decode($message->getBody(), true)['data'];

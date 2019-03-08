@@ -10,7 +10,7 @@ parameters:
     map_meter_width: 4000.00
     laser:
         meter_range: 30.00
-        aperture_angle: 270.00
+        aperture_angle: 360.00
         relative_position: true
     vertices_doubling: 2
     geo_near_sample_radius: 1
@@ -21,11 +21,11 @@ parameters:
         rotation_rpm: 13
     rover_length: 650.0
     tick_time: 0.005
-    tick_per_second: 150
+    tick_per_second: 1
     data_tick_config:
         tick_per_altimeter: 1
         tick_per_gyroscope: 1
-        tick_per_laser:     1
+        tick_per_laser:     100
         tick_per_position:  1
     rabbitmq:
         host: exchange
@@ -59,6 +59,19 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
+    App\Amqp\RpcClient:
+        arguments:
+            $config: '%rabbitmq%'
+    App\Amqp\RpcServer:
+        arguments:
+            $config: '%rabbitmq%'
+    App\Amqp\ClientDirectConsumer:
+        arguments:
+            $config: '%rabbitmq%'
+    App\Amqp\DirectConsumer:
+        arguments:
+            $config: '%rabbitmq%'
+
     App\Command\DataReceiverCommand:
         arguments:
             $config: '%rabbitmq%'
@@ -67,6 +80,9 @@ services:
         arguments:
             $config: '%rabbitmq%'
 
+    App\Amqp\ClientProducer:
+        arguments:
+            $config: '%rabbitmq%'
     App\Amqp\Producer:
         arguments:
             $config: '%rabbitmq%'

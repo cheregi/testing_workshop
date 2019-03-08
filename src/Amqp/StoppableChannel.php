@@ -78,4 +78,13 @@ class StoppableChannel extends AMQPChannel
     {
         return !$this->continueWait;
     }
+
+    public function publish_batch()
+    {
+        if (empty($this->batch_messages)) {
+            return false;
+        }
+
+        parent::publish_batch();
+    }
 }

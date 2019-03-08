@@ -209,8 +209,8 @@ class EmulationCommand extends Command
         }
         $this->logger->debug('Time per tick calculated', ['time' => $timePerTick]);
 
-        $maxTick = $input->getOption('max-tick');
-        $maxTime = $input->getOption('max-time');
+        $maxTick = intval($input->getOption('max-tick'));
+        $maxTime = intval($input->getOption('max-time'));
         $this->start = microtime(true);
         $continue = true;
         $tickCounter = 0;
@@ -231,9 +231,17 @@ class EmulationCommand extends Command
         }
         $lastSecond = 0;
 
-        if (!$benchmark && $maxTick == 0 && $maxTime == 0) {
+        if (!$benchmark && $maxTick < 0 && $maxTime < 0) {
+            $this->logger->debug('Starting with listener');
             $task = $this->amqpConsumer->start($continue);
         } else {
+            $this->logger->debug(
+                'Starting without listener',
+                [
+                    'benchmark' => $benchmark ? 1 : 0,
+                    'max tick' => $maxTick > 0 ? 1 : 0,
+                    'max time' => $maxTime > 0 ? 1 : 0
+                ]);
             $task = new Task([], $continue);
         }
         while ($task->getContinue()) {

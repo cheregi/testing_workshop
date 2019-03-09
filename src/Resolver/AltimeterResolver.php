@@ -13,25 +13,39 @@ class AltimeterResolver
             return $nearestPoint->getExactPoint()->getElevation();
         }
 
+        $topLeftPoint = $nearestPoint->getTopLeftPoint();
+        $topRightPoint = $nearestPoint->getTopRightPoint();
+        $bottomRightPoint = $nearestPoint->getBottomRightPoint();
+        $bottomLeftPoint = $nearestPoint->getBottomLeftPoint();
         $elevations = [
-            $this->getAverageElevation($nearestPoint->getTopRightPoint(), $nearestPoint->getBottomLeftPoint()),
-            $this->getAverageElevation($nearestPoint->getTopLeftPoint(), $nearestPoint->getBottomRightPoint()),
-            $this->getAverageElevation($nearestPoint->getTopLeftPoint(), $nearestPoint->getTopRightPoint()),
-            $this->getAverageElevation($nearestPoint->getBottomLeftPoint(), $nearestPoint->getBottomRightPoint()),
-            $this->getAverageElevation($nearestPoint->getTopLeftPoint(), $nearestPoint->getBottomLeftPoint()),
-            $this->getAverageElevation($nearestPoint->getTopRightPoint(), $nearestPoint->getBottomRightPoint())
+            [$topLeftPoint, $this->getDistance($topLeftPoint, $nearestPoint)],
+            [$topRightPoint, $this->getDistance($topRightPoint, $nearestPoint)],
+            [$bottomRightPoint, $this->getDistance($bottomRightPoint, $nearestPoint)],
+            [$bottomLeftPoint, $this->getDistance($bottomLeftPoint, $nearestPoint)]
         ];
 
-        $elevations = array_filter($elevations);
-        return (array_sum($elevations) / count($elevations));
+        $totalDistance = array_sum(array_map(function($row){
+            return $row[1];
+        }, $elevations));
+        $elevation = array_sum(array_map(function($row){
+            if ($row[0]) {
+                return $row[0]->getElevation() * $row[1];
+            }
+            return 0;
+        }, $elevations)) / $totalDistance;
+
+        return $elevation;
     }
 
-    private function getAverageElevation(?MapPoint $firstPoint, ?MapPoint $secondPoint)
+    private function getDistance(?MapPoint $point, NearestPoint $origin)
     {
-        if ($firstPoint && $secondPoint) {
-            return ($firstPoint->getElevation() + $secondPoint->getElevation()) / 2;
+        if ($point) {
+            return sqrt(
+                pow($point->getCoordinates()->getPositionX() - $origin->getPositionX(), 2) +
+                pow($point->getCoordinates()->getPositionY() - $origin->getPositionY(), 2)
+            );
         }
 
-        return false;
+        return 0;
     }
 }

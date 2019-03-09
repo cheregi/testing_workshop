@@ -33,6 +33,16 @@ class NearestPoint
     private $exactPoint;
 
     /**
+     * @var float
+     */
+    private $positionX;
+
+    /**
+     * @var float
+     */
+    private $positionY;
+
+    /**
      * NearestPoint constructor.
      *
      * @param MapPoint|null $topRightPoint
@@ -40,19 +50,26 @@ class NearestPoint
      * @param MapPoint|null $bottomRightPoint
      * @param MapPoint|null $bottomLeftPoint
      * @param MapPoint|null $exactPoint
+     * @param float         $positionX
+     * @param float         $positionY
      */
     public function __construct(
         MapPoint $topRightPoint = null,
         MapPoint $topLeftPoint = null,
         MapPoint $bottomRightPoint = null,
         MapPoint $bottomLeftPoint = null,
-        MapPoint $exactPoint = null
+        MapPoint $exactPoint = null,
+        float $positionX = 0,
+        float $positionY = 0
     ) {
         $this->topRightPoint = $topRightPoint;
         $this->topLeftPoint = $topLeftPoint;
         $this->bottomRightPoint = $bottomRightPoint;
         $this->bottomLeftPoint = $bottomLeftPoint;
         $this->exactPoint = $exactPoint;
+
+        $this->positionX = $positionX;
+        $this->positionY = $positionY;
     }
 
     public function rotate(float $angle)
@@ -188,6 +205,44 @@ class NearestPoint
     public function setExactPoint(?MapPoint $exactPoint): NearestPoint
     {
         $this->exactPoint = $exactPoint;
+        return $this;
+    }
+
+    /**
+     * @return float
+     */
+    public function getPositionX(): float
+    {
+        return $this->positionX;
+    }
+
+    /**
+     * @param float $positionX
+     *
+     * @return NearestPoint
+     */
+    public function setPositionX(float $positionX): NearestPoint
+    {
+        $this->positionX = $positionX;
+        return $this;
+    }
+
+    /**
+     * @return float
+     */
+    public function getPositionY(): float
+    {
+        return $this->positionY;
+    }
+
+    /**
+     * @param float $positionY
+     *
+     * @return NearestPoint
+     */
+    public function setPositionY(float $positionY): NearestPoint
+    {
+        $this->positionY = $positionY;
         return $this;
     }
 }

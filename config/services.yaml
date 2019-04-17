@@ -11,7 +11,7 @@ parameters:
     laser:
         meter_range: 30.00
         aperture_angle: 360.00
-        relative_position: true
+        relative_position: false
     vertices_doubling: 2
     geo_near_sample_radius: 1
     near_retry: 5

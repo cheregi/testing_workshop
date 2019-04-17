@@ -78,8 +78,9 @@ class LaserSensorCommand extends Command
         );
         $end = microtime(true) - $start;
 
+        $rawOutput = $this->converter->convert(TramConverter::DATA_TYPE_LASER_SENSOR, $points);
         if (!$output->isVerbose()) {
-            $output->writeln($this->converter->convert(TramConverter::DATA_TYPE_LASER_SENSOR, $points));
+            $output->writeln($rawOutput);
             return;
         }
         foreach ($points as $point) {
@@ -102,6 +103,7 @@ class LaserSensorCommand extends Command
         }
         $output->writeln(sprintf('<info>%d points resolved</info>', count($points)));
         $output->writeln(sprintf('<info>Resolving time : %fs</info>', $end));
+        $output->writeln(sprintf('<info>%d characters</info>', strlen($rawOutput)));
     }
 
 }

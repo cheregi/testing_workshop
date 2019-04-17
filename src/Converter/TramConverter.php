@@ -83,9 +83,16 @@ class TramConverter
     {
         $dataInfo = [];
         foreach ($data as ['x' => $x, 'y' => $y, 'z' => $z]) {
-            $dataInfo[] = implode(chr(0x1f), [$x, $y, $z]);
+            $dataInfo[] = implode(
+                ',',
+                [
+                    str_replace('.', '', number_format($x, 2)),
+                    str_replace('.', '', number_format($y, 2)),
+                    str_replace('.', '', number_format($z, 2))
+                ]
+            );
         }
-        return sprintf('%s%s%s', chr(static::DATA_TYPE_LASER_SENSOR), implode(chr(0x1d), $dataInfo), chr(0x03));
+        return sprintf('%s%s%s', chr(0x02), implode(';', $dataInfo), chr(0x03));
     }
 
     private function convertGyroscopicInfo(GyroscopicInfo $dataInfo)

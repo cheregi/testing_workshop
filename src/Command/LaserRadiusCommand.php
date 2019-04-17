@@ -81,6 +81,7 @@ class LaserRadiusCommand extends Command
         $laserData = $this->laser->resolveDetectedPoints($newX, $newY, 0, $altitude);
         $convert = $this->converter->convert(TramConverter::DATA_TYPE_LASER_SENSOR, $laserData);
 
+        $this->logger->debug('Data sent', ['data' => $convert]);
         $msg = new AMQPMessage(
             $convert,
             ['correlation_id' => $request->get('correlation_id')]
